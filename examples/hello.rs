@@ -9,11 +9,11 @@ use embedded_graphics::{
     primitives::{PrimitiveStyle, Rectangle},
     text::Text,
 };
-use push2_display::Push2Display;
+use ni_display::NiDisplay;
 use std::{error, thread, time};
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let mut display = Push2Display::new()?;
+    let mut display = NiDisplay::new().unwrap();
     let text_style = MonoTextStyle::new(&FONT_10X20, Bgr565::WHITE);
 
     let mut position = Point::new(0, 70);
@@ -30,8 +30,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             step *= -1;
         }
 
-        Text::new("Hello!", position, text_style)
-            .draw(&mut display)?;
+        Text::new("Hello!", position, text_style).draw(&mut display)?;
 
         display.flush()?; // if no frame arrives in 2 seconds, the display is turned black
         thread::sleep(time::Duration::from_millis(1000 / 60));

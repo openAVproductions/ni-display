@@ -1,5 +1,5 @@
 [package]
-name = "push2_display"
+name = "ni_display"
 version = "0.2.0"
 authors = ["Marc Bracher"]
 edition = "2018"

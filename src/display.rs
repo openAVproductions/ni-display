@@ -7,15 +7,15 @@ use rusb::{Context, Device, DeviceDescriptor, DeviceHandle, UsbContext};
 use std::convert::TryInto;
 use thiserror::Error;
 
-pub struct Push2Display {
+pub struct NiDisplay {
     handle: DeviceHandle<Context>,
     frame_buffer: Box<[u16]>,
 }
 
 #[derive(Error, Debug)]
-pub enum Push2DisplayError {
-    #[error("Ableton Push2 Not found")]
-    Push2NotFound,
+pub enum NiDisplayError {
+    #[error("Device Not found")]
+    DeviceNotFound,
 
     /// Represents all other cases of `std::io::Error`.
     #[error(transparent)]
@@ -25,49 +25,93 @@ pub enum Push2DisplayError {
     USBError(#[from] rusb::Error),
 }
 
-pub const DISPLAY_WIDTH: usize = 960;
-pub const DISPLAY_HEIGHT: usize = 160;
+/* 3rd byte == screen idx, 0 or 1 */
+const NI_HEADER: [u8; 16] = [
+    0x84, 0x0, 0x01, 0x60, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xe0, 0x1, 0x10,
+];
 
-const PUSH2_BULK_EP_OUT: u8 = 0x01;
-const BYTES_PER_LINE: usize = 2048; // 960 * 2 + 128 filler
-const PUSH_2_VENDOR_ID: u16 = 0x2982;
-const PUSH_2_PRODUCT_ID: u16 = 0x1967;
+/* num_px/2: 0xff00 is the (total_px/2) */
+const NI_COMMAND: [u8; 4] = [0x00, 0x0, 0xff, 0x00];
+
+const NI_FOOTER: [u8; 8] = [0x03, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00];
+
+/* TODO: Refactor out screen impl, and push to ctlra_ni_screen.h ?
+ Screen blit commands - no need to have publicly in header
+static const uint8_t header_right[] = {
+    0x84,  0x0, 0x01, 0x60,
+    0x0,  0x0, 0x0,  0x0,
+    0x0,  0x0, 0x0,  0x0,
+    0x1, 0xe0, 0x1, 0x10,
+};
+static const uint8_t header_left[] = {
+    0x84,  0x0, 0x00, 0x60,
+    0x0,  0x0, 0x0,  0x0,
+    0x0,  0x0, 0x0,  0x0,
+    0x1, 0xe0, 0x1, 0x10,
+};
+static const uint8_t command[] = {
+    /* num_px/2: 0xff00 is the (total_px/2) */
+    0x00, 0x0, 0xff, 0x00,
+};
+static const uint8_t footer[] = {
+    0x03, 0x00, 0x00, 0x00,
+    0x40, 0x00, 0x00, 0x00
+};
+/* 565 encoding, hence 2 bytes per px */
+#define NUM_PX (480 * 272)
+struct ni_screen_t {
+    uint8_t header [sizeof(header_left)];
+    uint8_t command[sizeof(command)];
+    uint16_t pixels [NUM_PX]; // 565 uses 2 bytes per pixel
+    uint8_t footer [sizeof(footer)];
+};
+*/
+
+pub const DISPLAY_WIDTH: usize = 480;
+pub const DISPLAY_HEIGHT: usize = 272;
+
+const BYTES_PER_LINE: usize = 480 * 2;
+
+const NI_VENDOR_ID: u16 = 0x17CC;
+const MASCHINE_MK3_PRODUCT_ID: u16 = 0x1600;
+const NI_MASCHINE_MK3_USBHID_INTERFACE: u8 = 5;
+const NI_MASCHINE_BULK_EP_OUT: u8 = 0x04;
 
 const HEADER: [u8; 16] = [
-    0xff, 0xcc, 0xaa, 0x88,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00
+    0xff, 0xcc, 0xaa, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 const MASK: [u8; 4] = [0xe7, 0xf3, 0xe7, 0xff];
 
-impl Push2Display {
-    /// Open the Push2 display. and init the frame buffer with black.
-    /// the frame buffer is not send send until you call `flush`
-    pub fn new() -> Result<Push2Display, Push2DisplayError> {
+impl NiDisplay {
+    pub fn new() -> Result<NiDisplay, NiDisplayError> {
         let mut context = Context::new()?;
-        let (_, _, mut handle) = open_device(&mut context, PUSH_2_VENDOR_ID, PUSH_2_PRODUCT_ID)
-            .ok_or(Push2DisplayError::Push2NotFound)?;
+        let (_, _, mut handle) = open_device(&mut context, NI_VENDOR_ID, MASCHINE_MK3_PRODUCT_ID)
+            .ok_or(NiDisplayError::DeviceNotFound)?;
+        handle.claim_interface(NI_MASCHINE_MK3_USBHID_INTERFACE)?;
 
-        handle.claim_interface(0)?;
         let buffer: Box<[u16]> = vec![0; DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice();
 
-        Ok(Push2Display {
+        println!("new() ok");
+        Ok(NiDisplay {
             handle,
             frame_buffer: buffer,
         })
     }
 
     /// Writes the frame buffer to the display. If no frame arrives in 2 seconds, the display is turned black
-    pub fn flush(&self) -> Result<(), Push2DisplayError> {
+    pub fn flush(&self) -> Result<(), NiDisplayError> {
         use std::time::Duration;
         let timeout = Duration::from_secs(1);
 
         let tranfer_buffer = self.masked_frame_buffer();
         self.handle
-            .write_bulk(PUSH2_BULK_EP_OUT, &HEADER, timeout)?;
+            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_HEADER, timeout)?;
         self.handle
-            .write_bulk(PUSH2_BULK_EP_OUT, &tranfer_buffer, timeout)?;
+            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_COMMAND, timeout)?;
+        self.handle
+            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &tranfer_buffer, timeout)?;
+        self.handle
+            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_FOOTER, timeout)?;
 
         Ok(())
     }
@@ -89,7 +133,7 @@ impl Push2Display {
     }
 }
 
-impl DrawTarget for Push2Display {
+impl DrawTarget for NiDisplay {
     type Color = Bgr565;
     type Error = core::convert::Infallible;
 
@@ -98,8 +142,8 @@ impl DrawTarget for Push2Display {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(point, color) in pixels.into_iter() {
-            if let Ok((x @ 0..=959, y @ 0..=159)) = point.try_into() {
-                let index: u32 = x + y * 960;
+            if let Ok((x @ 0..=479, y @ 0..=271)) = point.try_into() {
+                let index: u32 = x + y * 480;
                 self.frame_buffer[index as usize] = color.into_storage();
             }
         }
@@ -108,7 +152,7 @@ impl DrawTarget for Push2Display {
     }
 }
 
-impl OriginDimensions for Push2Display {
+impl OriginDimensions for NiDisplay {
     fn size(&self) -> Size {
         Size::new(DISPLAY_WIDTH as u32, DISPLAY_HEIGHT as u32)
     }
