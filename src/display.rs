@@ -35,38 +35,6 @@ const NI_COMMAND: [u8; 4] = [0x00, 0x0, 0xff, 0x00];
 
 const NI_FOOTER: [u8; 8] = [0x03, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00];
 
-/* TODO: Refactor out screen impl, and push to ctlra_ni_screen.h ?
- Screen blit commands - no need to have publicly in header
-static const uint8_t header_right[] = {
-    0x84,  0x0, 0x01, 0x60,
-    0x0,  0x0, 0x0,  0x0,
-    0x0,  0x0, 0x0,  0x0,
-    0x1, 0xe0, 0x1, 0x10,
-};
-static const uint8_t header_left[] = {
-    0x84,  0x0, 0x00, 0x60,
-    0x0,  0x0, 0x0,  0x0,
-    0x0,  0x0, 0x0,  0x0,
-    0x1, 0xe0, 0x1, 0x10,
-};
-static const uint8_t command[] = {
-    /* num_px/2: 0xff00 is the (total_px/2) */
-    0x00, 0x0, 0xff, 0x00,
-};
-static const uint8_t footer[] = {
-    0x03, 0x00, 0x00, 0x00,
-    0x40, 0x00, 0x00, 0x00
-};
-/* 565 encoding, hence 2 bytes per px */
-#define NUM_PX (480 * 272)
-struct ni_screen_t {
-    uint8_t header [sizeof(header_left)];
-    uint8_t command[sizeof(command)];
-    uint16_t pixels [NUM_PX]; // 565 uses 2 bytes per pixel
-    uint8_t footer [sizeof(footer)];
-};
-*/
-
 pub const DISPLAY_WIDTH: usize = 480;
 pub const DISPLAY_HEIGHT: usize = 272;
 
@@ -77,9 +45,7 @@ const MASCHINE_MK3_PRODUCT_ID: u16 = 0x1600;
 const NI_MASCHINE_MK3_USBHID_INTERFACE: u8 = 5;
 const NI_MASCHINE_BULK_EP_OUT: u8 = 0x04;
 
-const HEADER: [u8; 16] = [
-    0xff, 0xcc, 0xaa, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-];
+// TODO hvh: fixup how this works?
 const MASK: [u8; 4] = [0xe7, 0xf3, 0xe7, 0xff];
 
 impl NiDisplay {
@@ -91,7 +57,6 @@ impl NiDisplay {
 
         let buffer: Box<[u16]> = vec![0; DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice();
 
-        println!("new() ok");
         Ok(NiDisplay {
             handle,
             frame_buffer: buffer,
