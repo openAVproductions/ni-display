@@ -1,6 +1,6 @@
 //! # Example: Hello
 //!
-//! A simple example displaying some graphics and text on the Ableton Push2 display.
+//! A simple example displaying some graphics and text on the display.
 
 use embedded_graphics::{
     mono_font::{ascii::FONT_10X20, MonoTextStyle},
@@ -18,14 +18,41 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     display.select_display(0).unwrap();
 
-    let mut position = Point::new(0, 70);
+    let mut position = Point::new(0, 120);
     let mut step = 4;
     loop {
         display.clear(Bgr565::BLACK)?;
 
-        Rectangle::new(Point::zero(), display.size())
-            .into_styled(PrimitiveStyle::with_stroke(Bgr565::WHITE, 1))
+        Rectangle::new(Point::zero(), display.size() / 4)
+            .into_styled(PrimitiveStyle::with_fill(Bgr565::RED))
             .draw(&mut display)?;
+
+        Rectangle::new(Point::new(150, 0), display.size() / 4)
+            .into_styled(PrimitiveStyle::with_fill(Bgr565::GREEN))
+            .draw(&mut display)?;
+
+        Rectangle::new(Point::new(300, 0), display.size() / 4)
+            .into_styled(PrimitiveStyle::with_fill(Bgr565::BLUE))
+            .draw(&mut display)?;
+
+        for (x_off, col) in [
+            Bgr565::BLUE,
+            Bgr565::MAGENTA,
+            Bgr565::RED,
+            Bgr565::CYAN,
+            Bgr565::YELLOW,
+            Bgr565::WHITE,
+        ]
+        .iter()
+        .enumerate()
+        {
+            Rectangle::new(
+                Point::new(0, 100 + 30 * x_off as i32),
+                Size::new(display.size().width, 16),
+            )
+            .into_styled(PrimitiveStyle::with_stroke(col.clone(), 2))
+            .draw(&mut display)?;
+        }
 
         position.x += step;
         if position.x >= display.size().width as i32 || position.x <= 0 {

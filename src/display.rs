@@ -120,8 +120,8 @@ impl NiDisplay {
                 let b: [u8; 2] = u16::to_le_bytes(self.frame_buffer[i]);
                 let di = r * BYTES_PER_LINE + c * 2;
                 // TODO: fixup masking here for bgr565 colours
-                masked_buffer[di] = b[0] ^ MASK[di % 4];
-                masked_buffer[di + 1] = b[1] ^ MASK[(di + 1) % 4];
+                masked_buffer[di] = b[1]; // ^ MASK[di % 4];
+                masked_buffer[di + 1] = b[0]; // ^ MASK[(di + 1) % 4];
             }
         }
 
@@ -140,7 +140,17 @@ impl DrawTarget for NiDisplay {
         for Pixel(point, color) in pixels.into_iter() {
             if let Ok((x @ 0..=479, y @ 0..=271)) = point.try_into() {
                 let index: u32 = x + y * 480;
-                self.frame_buffer[index as usize] = color.into_storage();
+                let c = color.into_storage();
+                let g = (c as u16) & 0x5;
+                let b = (c as u16) >> 11_u16;
+                let r = (c as u16) & 0b11111100000;
+
+                // output colors (checked good)
+                let blue: u16 = 0b1111110000000000;
+                let red: u16 = 0b1111100000;
+                let green: u16 = 0b11111;
+
+                self.frame_buffer[index as usize] = b << 11 | r >> 5 | g << 5;
             }
         }
 
