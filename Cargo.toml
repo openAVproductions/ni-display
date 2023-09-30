@@ -13,11 +13,11 @@ repository = "https://github.com/mbracher/push2_display"
 embedded-graphics-core = "0.3.3"
 rusb = "0.9.1"
 thiserror = "1.0.30"
+embedded-graphics = "0.7.1"
+zerocopy = "0.6.1"
 
 
 [[example]]
 name = "hello"
 
-[dev_dependencies]
-embedded-graphics = "0.7.1"
 

@@ -10,6 +10,7 @@ use thiserror::Error;
 pub struct NiDisplay {
     handle: DeviceHandle<Context>,
     frame_buffer: Box<[u16]>,
+    header: Box<[u8]>,
 }
 
 #[derive(Error, Debug)]
@@ -56,11 +57,21 @@ impl NiDisplay {
         handle.claim_interface(NI_MASCHINE_MK3_USBHID_INTERFACE)?;
 
         let buffer: Box<[u16]> = vec![0; DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice();
+        let mut header: Box<[u8]> = vec![0; 16].into_boxed_slice();
+        header.clone_from_slice(&NI_HEADER);
 
         Ok(NiDisplay {
             handle,
             frame_buffer: buffer,
+            header,
         })
+    }
+
+    pub fn select_display(&mut self, id: u8) -> Result<(), NiDisplayError> {
+        if id == 0 {
+            self.header[2] = id;
+        }
+        Ok(())
     }
 
     /// Writes the frame buffer to the display. If no frame arrives in 2 seconds, the display is turned black
@@ -70,11 +81,30 @@ impl NiDisplay {
 
         let tranfer_buffer = self.masked_frame_buffer();
         self.handle
-            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_HEADER, timeout)?;
+            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &self.header, timeout)?;
         self.handle
             .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_COMMAND, timeout)?;
-        self.handle
-            .write_bulk(NI_MASCHINE_BULK_EP_OUT, &tranfer_buffer, timeout)?;
+
+        let mut use_2nd_buf = true;
+        //use_2nd_buf = false;
+        if use_2nd_buf {
+            let frame_data: &[u8] = unsafe {
+                std::slice::from_raw_parts(
+                    self.frame_buffer.as_ptr() as *const u8,
+                    self.frame_buffer.len() * 2,
+                )
+            };
+
+            self.handle.write_bulk(
+                NI_MASCHINE_BULK_EP_OUT,
+                //(*self.frame_buffer) as [u8], //.as_bytes(),
+                frame_data,
+                timeout,
+            )?;
+        } else {
+            self.handle
+                .write_bulk(NI_MASCHINE_BULK_EP_OUT, &tranfer_buffer, timeout)?;
+        }
         self.handle
             .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_FOOTER, timeout)?;
 
@@ -89,6 +119,7 @@ impl NiDisplay {
                 let i = r * DISPLAY_WIDTH + c;
                 let b: [u8; 2] = u16::to_le_bytes(self.frame_buffer[i]);
                 let di = r * BYTES_PER_LINE + c * 2;
+                // TODO: fixup masking here for bgr565 colours
                 masked_buffer[di] = b[0] ^ MASK[di % 4];
                 masked_buffer[di + 1] = b[1] ^ MASK[(di + 1) % 4];
             }

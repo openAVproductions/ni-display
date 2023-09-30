@@ -16,6 +16,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let mut display = NiDisplay::new().unwrap();
     let text_style = MonoTextStyle::new(&FONT_10X20, Bgr565::WHITE);
 
+    display.select_display(0).unwrap();
+
     let mut position = Point::new(0, 70);
     let mut step = 4;
     loop {
