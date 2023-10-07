@@ -1,8 +1,7 @@
 //! This Rust library implements the Embedded-graphics-core `DrawTarget` trait,
-//! making it easy to draw 2D graphics primitives on the Push2 display.
+//! making it easy to draw 2D graphics primitives on the Native Instruments display.
 //!
-//! Ableton Push2 is a MIDI instrument with a 960x160 RGB LCD display.
-//! Push2 is a USB composite device with a MIDI interface and a generic bulk data interface used to drive the display.
+//! Native Instruments Maschine Mk3 is a USB-HID controller, with a USB-Bulk endpoint driving 2x 480x272 RGB LCD displays.
 //!
 //! # Examples
 //!

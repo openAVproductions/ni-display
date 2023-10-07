@@ -20,4 +20,6 @@ zerocopy = "0.6.1"
 [[example]]
 name = "hello"
 
+[[example]]
+name = "demo"
 

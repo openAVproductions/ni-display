@@ -57,16 +57,35 @@ impl NiDisplay {
         let mut header: Box<[u8]> = vec![0; 16].into_boxed_slice();
         header.clone_from_slice(&NI_HEADER);
 
-        Ok(NiDisplay {
+        let mut s = NiDisplay {
             handle,
             frame_buffer: buffer,
             header,
-        })
+        };
+
+        s.reset()?;
+
+        Ok(s)
+    }
+
+    pub fn reset(&mut self) -> Result<(), NiDisplayError> {
+        // zero out screens to black at startup
+        // clear() returns infallible, so this is fine.
+        self.select_display(0)?;
+        self.clear(Bgr565::BLACK).unwrap();
+        self.flush()?;
+
+        self.select_display(1)?;
+        self.clear(Bgr565::BLACK).unwrap();
+        self.flush()?;
+        Ok(())
     }
 
     pub fn select_display(&mut self, id: u8) -> Result<(), NiDisplayError> {
         if id == 0 {
-            self.header[2] = id;
+            self.header[2] = 0;
+        } else {
+            self.header[2] = 1;
         }
         Ok(())
     }
@@ -122,6 +141,13 @@ impl NiDisplay {
         }
 
         masked_buffer
+    }
+}
+
+impl Drop for NiDisplay {
+    fn drop(&mut self) {
+        // if this fails, there's nothing we can do anymore.
+        let _ = self.reset();
     }
 }
 
