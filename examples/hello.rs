@@ -16,6 +16,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let mut display = NiDisplay::new().unwrap();
     let text_style = MonoTextStyle::new(&FONT_10X20, Bgr565::WHITE);
 
+    // change to display 1 for the right screen :) Note that this API may change in future
+    // (to allow for both screens to be drawn to in a more optimal way)
     display.select_display(0).unwrap();
 
     let mut position = Point::new(0, 120);

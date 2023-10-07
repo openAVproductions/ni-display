@@ -1,13 +1,13 @@
 [package]
 name = "ni_display"
-version = "0.2.0"
-authors = ["Marc Bracher"]
+version = "0.1.0"
+authors = ["Harry van Haaren <harryhaaren@gmail.com>","Marc Bracher"]
 edition = "2018"
-description="Ableton Push2 Embedded-graphics display driver"
+description="Native Instruments Maschine Mk3 Embedded-graphics display driver"
 license="MIT OR Apache-2.0"
 readme = "./README.md"
-keywords = ["embedded-graphics", "graphics", "embedded", "push2"]
-repository = "https://github.com/mbracher/push2_display"
+keywords = ["embedded-graphics", "graphics", "embedded", "native-instruments", "maschine"]
+repository = "https://github.com/openAVproductions/ni-display"
 
 [dependencies]
 embedded-graphics-core = "0.3.3"

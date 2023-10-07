@@ -46,9 +46,6 @@ const MASCHINE_MK3_PRODUCT_ID: u16 = 0x1600;
 const NI_MASCHINE_MK3_USBHID_INTERFACE: u8 = 5;
 const NI_MASCHINE_BULK_EP_OUT: u8 = 0x04;
 
-// TODO hvh: fixup how this works?
-const MASK: [u8; 4] = [0xe7, 0xf3, 0xe7, 0xff];
-
 impl NiDisplay {
     pub fn new() -> Result<NiDisplay, NiDisplayError> {
         let mut context = Context::new()?;
@@ -85,9 +82,8 @@ impl NiDisplay {
         self.handle
             .write_bulk(NI_MASCHINE_BULK_EP_OUT, &NI_COMMAND, timeout)?;
 
-        let mut use_2nd_buf = true;
-        //use_2nd_buf = false;
-        if use_2nd_buf {
+        // WIP optmization potential saving buffer copies
+        if true {
             let frame_data: &[u8] = unsafe {
                 std::slice::from_raw_parts(
                     self.frame_buffer.as_ptr() as *const u8,
@@ -144,12 +140,7 @@ impl DrawTarget for NiDisplay {
                 let g = (c as u16) & 0x5;
                 let b = (c as u16) >> 11_u16;
                 let r = (c as u16) & 0b11111100000;
-
-                // output colors (checked good)
-                let blue: u16 = 0b1111110000000000;
-                let red: u16 = 0b1111100000;
-                let green: u16 = 0b11111;
-
+                // TODO: optimize this, it costs lots of CPU cycles/uops right now
                 self.frame_buffer[index as usize] = b << 11 | r >> 5 | g << 5;
             }
         }
