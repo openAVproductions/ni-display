@@ -25,15 +25,17 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     loop {
         display.clear(Bgr565::BLACK)?;
 
-        Rectangle::new(Point::zero(), display.size() / 4)
+        let fifth = display.size() / 5;
+        let fifth_w = fifth.width as i32;
+        Rectangle::new(Point::zero(), fifth)
             .into_styled(PrimitiveStyle::with_fill(Bgr565::RED))
             .draw(&mut display)?;
 
-        Rectangle::new(Point::new(150, 0), display.size() / 4)
+        Rectangle::new(Point::new(fifth_w * 2, 0), fifth)
             .into_styled(PrimitiveStyle::with_fill(Bgr565::GREEN))
             .draw(&mut display)?;
 
-        Rectangle::new(Point::new(300, 0), display.size() / 4)
+        Rectangle::new(Point::new(fifth_w * 4, 0), fifth)
             .into_styled(PrimitiveStyle::with_fill(Bgr565::BLUE))
             .draw(&mut display)?;
 
@@ -49,19 +51,20 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         .enumerate()
         {
             Rectangle::new(
-                Point::new(0, 100 + 30 * x_off as i32),
-                Size::new(display.size().width, 16),
+                Point::new(0, 150 + 20 * x_off as i32),
+                Size::new(display.size().width, 14),
             )
             .into_styled(PrimitiveStyle::with_stroke(col.clone(), 2))
             .draw(&mut display)?;
         }
 
         position.x += step;
-        if position.x >= display.size().width as i32 || position.x <= 0 {
+        if position.x >= (display.size().width - 360) as i32 || position.x <= 0 {
             step *= -1;
         }
 
-        Text::new("Hello!", position, text_style).draw(&mut display)?;
+        Text::new("Maschine Mk3 - EmbeddedGraphics demo", position, text_style)
+            .draw(&mut display)?;
 
         display.flush()?; // if no frame arrives in 2 seconds, the display is turned black
         thread::sleep(time::Duration::from_millis(1000 / 60));
