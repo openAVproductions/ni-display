@@ -8,42 +8,21 @@ making it easy to draw 2D graphics primitives on the Maschine Mk3 display.
 
 ## Examples
 
-```rust
-use embedded_graphics::{
-    mono_font::{ascii::FONT_10X20, MonoTextStyle},
-    pixelcolor::{PixelColor, Bgr565},
-    prelude::*,
-    text::Text,
-};
-use ni_display::NiDisplay;
-
-let mut display = NiDisplay::new().unwrap();
-let text_style = MonoTextStyle::new(&FONT_10X20, Bgr565::WHITE);
-
-Text::new("Hello!", Point::new(400, 70), &text_style)
-    .draw(&mut display)?;
-
-display.flush()?;
-```
-
+Clone this repo, see examples/demo.rs, and run
 ```bash
-git clone https://github.com/mbracher/push2_display
-cd push2_display
-
-cargo run --example hello
+cargo run --example demo
 ```
-
-![Photo of hello example on Push2 device](https://raw.githubusercontent.com/mbracher/push2_display/master/doc/assets/push2hello.jpg)
 
 ## References
-[Ableton Push Interface](https://github.com/Ableton/push-interface)
+This repo is inspired from, and based on code of the "push2_display" crate
+by Marc Bracher. Thank you Marc for sharing your code and implementation, converting
+the Push2 code to NativeInstruments was fun - and I would not have built the whole
+rust based embedded-graphics infrastructure myself. Checkout his code here:
+[Ableton Push2 embedded graphics repo](https://github.com/mbracher/push2_display)
 
+Also, the embedded graphics project is the ecosystem that enabled this crate,
+checkout the great work there, and use the UI/pixel manipulating code from here:
 [Embedded graphics](https://github.com/embedded-graphics/embedded-graphics)
-
-## Projects using push2_display
-- [push2_pong](https://github.com/mbracher/push2_pong): two player ping pong game on the Ableton Push2 midi controller
-
-- [push2_soundboard](https://github.com/Dragonseel/push2_soundboard): play sounds and loops via pressing buttons on the Ableton Push2 midi controller
 
 ## License
 
